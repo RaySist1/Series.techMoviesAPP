@@ -111,14 +111,64 @@ function createWindow() {
   // Set up BrowserView event handlers
   const webContents = browserView.webContents;
 
-  // Handle new window events (pop-ups) - block them
+  // Handle new window events (pop-ups) - allow Google authentication URLs
   webContents.setWindowOpenHandler(({ url }) => {
-    return { action: 'deny' };
+    try {
+      const urlObj = new URL(url);
+      const hostname = urlObj.hostname;
+      
+      // Allow Google authentication URLs
+      if (hostname === 'series-tech.firebaseapp.com' || 
+          hostname === 'accounts.google.com' ||
+          hostname.includes('seriestechmovies.site')) {
+        return { 
+          action: 'allow',
+          overrideBrowserWindowOptions: {
+            autoHideMenuBar: true,
+            webPreferences: {
+              nodeIntegration: false,
+              contextIsolation: true,
+              webSecurity: true
+            }
+          }
+        };
+      }
+      
+      // Block all other pop-ups
+      return { action: 'deny' };
+    } catch (e) {
+      // If URL parsing fails, deny the request
+      return { action: 'deny' };
+    }
   });
 
-  // Handle pop-up windows
+  // Configure popup windows after they're created
+  webContents.on('did-create-window', (popupWindow, details) => {
+    // Remove menu bar completely for all popups
+    popupWindow.setMenuBarVisibility(false);
+    popupWindow.setMenu(null);
+  });
+
+  // Handle pop-up windows - allow Google authentication URLs
   webContents.on('new-window', (event, url) => {
-    event.preventDefault();
+    try {
+      const urlObj = new URL(url);
+      const hostname = urlObj.hostname;
+      
+      // Allow Google authentication URLs
+      if (hostname === 'series-tech.firebaseapp.com' || 
+          hostname === 'accounts.google.com' ||
+          hostname.includes('seriestechmovies.site')) {
+        // Allow the navigation
+        return;
+      }
+      
+      // Block all other pop-ups
+      event.preventDefault();
+    } catch (e) {
+      // If URL parsing fails, prevent the navigation
+      event.preventDefault();
+    }
   });
 
   // Load default page
