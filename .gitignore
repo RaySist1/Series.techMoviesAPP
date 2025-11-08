@@ -1,0 +1,8 @@
+# This file tells Git to ignore files that shouldn't be tracked
+node_modules/
+dist/
+build/
+*.log
+.DS_Store
+Thumbs.db
+
